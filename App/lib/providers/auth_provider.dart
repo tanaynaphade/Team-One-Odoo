@@ -80,27 +80,21 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result = await ApiService.register(name, email, password);
+      List<String> nameParts = name.split(' ');
+      final result = await ApiService.register(nameParts[0],nameParts[1], email, password);
 
-      if (result['success']) {
-        _token = result['data']['token'];
-        _currentUser = User.fromJson(result['data']['user']);
-
-        // Save to preferences
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', _token!);
-
-        _isLoading = false;
-        notifyListeners();
-        return true;
+      if (result['success'] == true) {
+        final data = result['data'];
+          return true;
       } else {
-        _error = result['error'];
+        _error = result['error'] ?? 'Registration failed';
         _isLoading = false;
         notifyListeners();
         return false;
       }
     } catch (e) {
-      _error = 'Registration failed: \$e';
+      print('Registration error: $e');
+      _error = 'Registration failed: $e';
       _isLoading = false;
       notifyListeners();
       return false;

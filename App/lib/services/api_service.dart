@@ -7,13 +7,13 @@ import '../models/project.dart';
 import '../models/task.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api'; // Replace with your MongoDB API URL
+  static const String baseUrl = 'http://192.168.1.22:8080/api/v1/'; // Updated to match your backend
 
   // Auth endpoints
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'),
+        Uri.parse('$baseUrl/auth/login'), // You'll need to implement this endpoint
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
@@ -37,19 +37,22 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> register(String name, String email, String password) async {
+  static Future<Map<String, dynamic>> register(String firstName, String lastName, String email, String password) async {
+    int test = 0;
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/register'),
+        Uri.parse('${baseUrl}users/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'name': name,
+          'firstname': firstName,
+          'lastname': lastName,
           'email': email,
           'password': password,
         }),
       );
-
-      if (response.statusCode == 201) {
+      test = response.statusCode;
+      print(response.statusCode.toString());
+      if (response.statusCode == 201 || response.statusCode == 200) {
         return {
           'success': true,
           'data': jsonDecode(response.body),
@@ -57,10 +60,11 @@ class ApiService {
       } else {
         return {
           'success': false,
-          'error': jsonDecode(response.body)['message'] ?? 'Registration failed',
+          'error': jsonDecode(response.body)['message'] ?? response.statusCode.toString(),
         };
       }
     } catch (e) {
+      print(test); // Moved outside the return statement
       return {
         'success': false,
         'error': 'Network error: $e',
@@ -72,7 +76,7 @@ class ApiService {
   static Future<User?> getCurrentUser(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/user/me'),
+        Uri.parse('$baseUrl/users/me'), // You'll need to implement this endpoint
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -92,7 +96,7 @@ class ApiService {
   static Future<bool> updateUserProfile(String token, Map<String, dynamic> userData) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/user/profile'),
+        Uri.parse('$baseUrl/users/profile'), // You'll need to implement this endpoint
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -106,7 +110,7 @@ class ApiService {
     }
   }
 
-  // Project endpoints
+  // Project endpoints - You'll need to implement these in your backend
   static Future<List<Project>> getProjects(String token) async {
     try {
       final response = await http.get(
@@ -164,7 +168,23 @@ class ApiService {
     }
   }
 
-  // Task endpoints
+  static Future<bool> deleteProject(String token, String projectId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/projects/$projectId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Task endpoints - You'll need to implement these in your backend
   static Future<List<Task>> getTasks(String token, {String? projectId}) async {
     try {
       String url = '$baseUrl/tasks';
@@ -227,7 +247,23 @@ class ApiService {
     }
   }
 
-  // File upload
+  static Future<bool> deleteTask(String token, String taskId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/tasks/$taskId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // File upload - You'll need to implement this endpoint in your backend
   static Future<String?> uploadImage(String token, File imageFile) async {
     try {
       var request = http.MultipartRequest('POST', Uri.parse('$baseUrl/upload'));
