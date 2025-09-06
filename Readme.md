@@ -182,9 +182,9 @@ export const API_BASE_URL = 'http://localhost:3000/api/v1';
 
 ### Authentication Endpoints
 
-- `GET /api/users/login` - Get user profile
-- `PUT /api/users/register` - Update user profile
+- `GET /api/v1/users/login` - Get user profile
+- `PUT /api/v1/users/register` - Update user profile
 
 
 ### Project Create
-- 
+- 'PUT /api/v1/project/createproject' - create a project
