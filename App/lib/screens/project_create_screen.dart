@@ -1,11 +1,13 @@
 // lib/screens/projects/project_create_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../../providers/auth_provider.dart';
-import '../../providers/data_provider.dart';
-import '../../config/theme.dart';
+
+import 'package:app/providers/auth_provider.dart';
+import 'package:app/providers/data_provider.dart';
+import 'package:app/config/theme.dart';
 
 class ProjectCreateScreen extends StatefulWidget {
   @override
@@ -17,12 +19,10 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _tagsController = TextEditingController();
-
   DateTime _selectedDeadline = DateTime.now().add(const Duration(days: 30));
   String _selectedPriority = 'Medium';
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-
   final List<String> _priorities = ['Low', 'Medium', 'High'];
 
   @override
@@ -114,7 +114,6 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
                                 ),
                               ),
                             const SizedBox(height: 12),
-
                             Row(
                               children: [
                                 Expanded(
@@ -252,7 +251,7 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
                                         ),
                                       ),
                                       Text(
-                                        auth.currentUser?.name ?? 'Unknown',
+                                        auth.currentUser?.fullName ?? 'Unknown', // FIXED: Changed from .name to .fullName
                                         style: Theme.of(context).textTheme.bodyLarge,
                                       ),
                                     ],
@@ -273,7 +272,7 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
                                       prefixIcon: Icon(Icons.flag),
                                     ),
                                     items: _priorities.map((priority) {
-                                      return DropdownMenuItem<String>(
+                                      return DropdownMenuItem(
                                         value: priority,
                                         child: Row(
                                           children: [
@@ -326,7 +325,7 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '\${_selectedDeadline.day}/\${_selectedDeadline.month}/\${_selectedDeadline.year}',
+                                          '${_selectedDeadline.day}/${_selectedDeadline.month}/${_selectedDeadline.year}',
                                           style: Theme.of(context).textTheme.bodyLarge,
                                         ),
                                       ],
@@ -348,13 +347,13 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
                       onPressed: _saveProject,
                       child: dataProvider.isLoading
                           ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(AppColors.background),
-                              ),
-                            )
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(AppColors.background),
+                        ),
+                      )
                           : const Text('Create Project'),
                     ),
                     const SizedBox(height: 16),
@@ -376,7 +375,6 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
         maxHeight: 1024,
         imageQuality: 80,
       );
-
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
@@ -385,7 +383,7 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error selecting image: \$e'),
+          content: Text('Error selecting image: $e'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -409,7 +407,6 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
         );
       },
     );
-
     if (date != null) {
       setState(() {
         _selectedDeadline = date;
@@ -456,7 +453,6 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
     }
 
     final success = await dataProvider.createProject(auth.token!, projectData);
-
     if (success) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -468,8 +464,8 @@ class _ProjectCreateScreenState extends State<ProjectCreateScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(dataProvider.error.isNotEmpty 
-              ? dataProvider.error 
+          content: Text(dataProvider.error.isNotEmpty
+              ? dataProvider.error
               : 'Failed to create project'),
           backgroundColor: AppColors.error,
         ),

@@ -7,29 +7,52 @@ import '../models/project.dart';
 import '../models/task.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://192.168.1.22:8080/api/v1/'; // Updated to match your backend
+  static const String baseUrl = 'http://192.168.1.7:8080/api/v1';
 
   // Auth endpoints
   static Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/login'), // You'll need to implement this endpoint
+        Uri.parse('$baseUrl/users/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
 
+      print('Login response status: ${response.statusCode}');
+      print('Login response body: ${response.body}');
+
       if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+
+        // Extract cookies for token
+        String? accessToken;
+        final cookies = response.headers['set-cookie'];
+        if (cookies != null) {
+          final cookieList = cookies.split(',');
+          for (String cookie in cookieList) {
+            if (cookie.trim().startsWith('accessToken=')) {
+              accessToken = cookie.split('=')[1].split(';')[0];
+              break;
+            }
+          }
+        }
+
         return {
           'success': true,
-          'data': jsonDecode(response.body),
+          'data': {
+            'user': responseData['data'],
+            'token': accessToken, // Use extracted token from cookies
+          },
         };
       } else {
+        final errorData = jsonDecode(response.body);
         return {
           'success': false,
-          'error': jsonDecode(response.body)['message'] ?? 'Login failed',
+          'error': errorData['message'] ?? 'Login failed',
         };
       }
     } catch (e) {
+      print('Login error: $e');
       return {
         'success': false,
         'error': 'Network error: $e',
@@ -38,10 +61,9 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> register(String firstName, String lastName, String email, String password) async {
-    int test = 0;
     try {
       final response = await http.post(
-        Uri.parse('${baseUrl}users/register'),
+        Uri.parse('$baseUrl/users/register'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'firstname': firstName,
@@ -50,21 +72,24 @@ class ApiService {
           'password': password,
         }),
       );
-      test = response.statusCode;
-      print(response.statusCode.toString());
+
+      print('Register response status: ${response.statusCode}');
+      print('Register response body: ${response.body}');
+
       if (response.statusCode == 201 || response.statusCode == 200) {
         return {
           'success': true,
           'data': jsonDecode(response.body),
         };
       } else {
+        final errorData = jsonDecode(response.body);
         return {
           'success': false,
-          'error': jsonDecode(response.body)['message'] ?? response.statusCode.toString(),
+          'error': errorData['message'] ?? 'Registration failed',
         };
       }
     } catch (e) {
-      print(test); // Moved outside the return statement
+      print('Register error: $e');
       return {
         'success': false,
         'error': 'Network error: $e',
@@ -83,12 +108,16 @@ class ApiService {
         },
       );
 
+      print('Get current user response status: ${response.statusCode}');
+      print('Get current user response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return User.fromJson(data);
+        return User.fromJson(data['data'] ?? data);
       }
       return null;
     } catch (e) {
+      print('Get current user error: $e');
       return null;
     }
   }
@@ -104,29 +133,36 @@ class ApiService {
         body: jsonEncode(userData),
       );
 
+      print('Update profile response status: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      print('Update profile error: $e');
       return false;
     }
   }
 
-  // Project endpoints - You'll need to implement these in your backend
+  // Project endpoints
   static Future<List<Project>> getProjects(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/projects'),
+        Uri.parse('$baseUrl/project'), // Note: using 'project' not 'projects' to match your backend route
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
+      print('Get projects response status: ${response.statusCode}');
+      print('Get projects response body: ${response.body}');
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        final List<dynamic> data = responseData['data'] ?? responseData;
         return data.map((json) => Project.fromJson(json)).toList();
       }
       return [];
     } catch (e) {
+      print('Get projects error: $e');
       return [];
     }
   }
@@ -134,7 +170,7 @@ class ApiService {
   static Future<Project?> createProject(String token, Map<String, dynamic> projectData) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/projects'),
+        Uri.parse('$baseUrl/project/createproject'), // Match your backend route
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -142,11 +178,16 @@ class ApiService {
         body: jsonEncode(projectData),
       );
 
+      print('Create project response status: ${response.statusCode}');
+      print('Create project response body: ${response.body}');
+
       if (response.statusCode == 201) {
-        return Project.fromJson(jsonDecode(response.body));
+        final responseData = jsonDecode(response.body);
+        return Project.fromJson(responseData['data']);
       }
       return null;
     } catch (e) {
+      print('Create project error: $e');
       return null;
     }
   }
@@ -154,7 +195,7 @@ class ApiService {
   static Future<bool> updateProject(String token, String projectId, Map<String, dynamic> projectData) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/projects/$projectId'),
+        Uri.parse('$baseUrl/project/$projectId'), // You'll need to implement this endpoint
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
@@ -162,8 +203,10 @@ class ApiService {
         body: jsonEncode(projectData),
       );
 
+      print('Update project response status: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      print('Update project error: $e');
       return false;
     }
   }
@@ -171,15 +214,17 @@ class ApiService {
   static Future<bool> deleteProject(String token, String projectId) async {
     try {
       final response = await http.delete(
-        Uri.parse('$baseUrl/projects/$projectId'),
+        Uri.parse('$baseUrl/project/$projectId'), // You'll need to implement this endpoint
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',
         },
       );
 
+      print('Delete project response status: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      print('Delete project error: $e');
       return false;
     }
   }
@@ -200,12 +245,16 @@ class ApiService {
         },
       );
 
+      print('Get tasks response status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
+        final responseData = jsonDecode(response.body);
+        final List<dynamic> data = responseData['data'] ?? responseData;
         return data.map((json) => Task.fromJson(json)).toList();
       }
       return [];
     } catch (e) {
+      print('Get tasks error: $e');
       return [];
     }
   }
@@ -221,11 +270,15 @@ class ApiService {
         body: jsonEncode(taskData),
       );
 
+      print('Create task response status: ${response.statusCode}');
+
       if (response.statusCode == 201) {
-        return Task.fromJson(jsonDecode(response.body));
+        final responseData = jsonDecode(response.body);
+        return Task.fromJson(responseData['data'] ?? responseData);
       }
       return null;
     } catch (e) {
+      print('Create task error: $e');
       return null;
     }
   }
@@ -241,8 +294,10 @@ class ApiService {
         body: jsonEncode(taskData),
       );
 
+      print('Update task response status: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      print('Update task error: $e');
       return false;
     }
   }
@@ -257,8 +312,10 @@ class ApiService {
         },
       );
 
+      print('Delete task response status: ${response.statusCode}');
       return response.statusCode == 200;
     } catch (e) {
+      print('Delete task error: $e');
       return false;
     }
   }
@@ -272,6 +329,8 @@ class ApiService {
 
       var response = await request.send();
 
+      print('Upload image response status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         var responseData = await response.stream.bytesToString();
         var jsonResponse = jsonDecode(responseData);
@@ -279,6 +338,7 @@ class ApiService {
       }
       return null;
     } catch (e) {
+      print('Upload image error: $e');
       return null;
     }
   }

@@ -1,12 +1,14 @@
 // lib/screens/tasks/task_create_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../../providers/auth_provider.dart';
-import '../../providers/data_provider.dart';
-import '../../models/task.dart';
-import '../../config/theme.dart';
+
+import 'package:app/providers/auth_provider.dart';
+import 'package:app/providers/data_provider.dart';
+import 'package:app/models/task.dart';
+import 'package:app/config/theme.dart';
 
 class TaskCreateScreen extends StatefulWidget {
   final String? projectId;
@@ -22,7 +24,6 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _tagsController = TextEditingController();
-
   String? _selectedProjectId;
   String? _selectedAssigneeId;
   DateTime _selectedDueDate = DateTime.now().add(const Duration(days: 7));
@@ -30,7 +31,6 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
   TaskStatus _selectedStatus = TaskStatus.todo;
   File? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-
   final List<String> _priorities = ['Low', 'Medium', 'High'];
   final List<TaskStatus> _statuses = TaskStatus.values;
 
@@ -129,7 +129,6 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
                                 ),
                               ),
                             const SizedBox(height: 12),
-
                             Row(
                               children: [
                                 Expanded(
@@ -247,7 +246,7 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
                                 prefixIcon: Icon(Icons.folder),
                               ),
                               items: dataProvider.projects.map((project) {
-                                return DropdownMenuItem<String>(
+                                return DropdownMenuItem(
                                   value: project.id,
                                   child: Text(project.name),
                                 );
@@ -288,7 +287,7 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
                                         ),
                                       ),
                                       Text(
-                                        auth.currentUser?.name ?? 'Unknown',
+                                        auth.currentUser?.fullName ?? 'Unknown', // FIXED: Changed from .name to .fullName
                                         style: Theme.of(context).textTheme.bodyLarge,
                                       ),
                                     ],
@@ -328,7 +327,7 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
                                       prefixIcon: Icon(Icons.flag),
                                     ),
                                     items: _priorities.map((priority) {
-                                      return DropdownMenuItem<String>(
+                                      return DropdownMenuItem(
                                         value: priority,
                                         child: Row(
                                           children: [
@@ -364,7 +363,7 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
                                       prefixIcon: Icon(Icons.task_alt),
                                     ),
                                     items: _statuses.map((status) {
-                                      return DropdownMenuItem<TaskStatus>(
+                                      return DropdownMenuItem(
                                         value: status,
                                         child: Text(_getStatusText(status)),
                                       );
@@ -404,7 +403,7 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
                                           ),
                                         ),
                                         Text(
-                                          '\${_selectedDueDate.day}/\${_selectedDueDate.month}/\${_selectedDueDate.year}',
+                                          '${_selectedDueDate.day}/${_selectedDueDate.month}/${_selectedDueDate.year}',
                                           style: Theme.of(context).textTheme.bodyLarge,
                                         ),
                                       ],
@@ -426,13 +425,13 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
                       onPressed: _saveTask,
                       child: dataProvider.isLoading
                           ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(AppColors.background),
-                              ),
-                            )
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(AppColors.background),
+                        ),
+                      )
                           : const Text('Create Task'),
                     ),
                     const SizedBox(height: 16),
@@ -454,7 +453,6 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
         maxHeight: 1024,
         imageQuality: 80,
       );
-
       if (image != null) {
         setState(() {
           _selectedImage = File(image.path);
@@ -463,7 +461,7 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error selecting image: \$e'),
+          content: Text('Error selecting image: $e'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -487,7 +485,6 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
         );
       },
     );
-
     if (date != null) {
       setState(() {
         _selectedDueDate = date;
@@ -534,7 +531,6 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
     }
 
     final success = await dataProvider.createTask(auth.token!, taskData);
-
     if (success) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -546,8 +542,8 @@ class _TaskCreateScreenState extends State<TaskCreateScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(dataProvider.error.isNotEmpty 
-              ? dataProvider.error 
+          content: Text(dataProvider.error.isNotEmpty
+              ? dataProvider.error
               : 'Failed to create task'),
           backgroundColor: AppColors.error,
         ),

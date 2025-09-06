@@ -1,13 +1,14 @@
 // lib/screens/projects/projects_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/data_provider.dart';
-import '../../models/project.dart';
-import '../../config/theme.dart';
+import 'package:app/providers/auth_provider.dart';
+import 'package:app/providers/data_provider.dart';
+import 'package:app/models/project.dart';
+import 'package:app/models/task.dart';
 import '../models/task.dart';
 import 'project_detail_screen.dart';
 import 'project_create_screen.dart';
+import 'package:app/config/theme.dart';
 
 class ProjectsScreen extends StatefulWidget {
   @override

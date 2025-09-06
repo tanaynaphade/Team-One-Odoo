@@ -1,8 +1,8 @@
 // lib/screens/auth/login_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../config/theme.dart';
+import 'package:app/providers/auth_provider.dart';
+import 'package:app/config/theme.dart';
 import 'signup_screen.dart';
 import 'main_navigation_screen.dart';
 
@@ -16,6 +16,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoggingIn = false; // Local loading state to prevent double navigation
 
   @override
   void dispose() {
@@ -85,15 +86,16 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   keyboardType: TextInputType.emailAddress,
-                  // validator: (value) {
-                  //   if (value?.isEmpty ?? true) {
-                  //     return 'Please enter your email';
-                  //   }
-                  //   if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(value!)) {
-                  //     return 'Please enter a valid email';
-                  //   }
-                  //   return null;
-                  // },
+                  enabled: !_isLoggingIn, // Disable during login
+                  validator: (value) {
+                    if (value?.isEmpty ?? true) {
+                      return 'Please enter your email';
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                      return 'Please enter a valid email';
+                    }
+                    return null;
+                  },
                 ),
                 const SizedBox(height: 16),
 
@@ -107,14 +109,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       icon: Icon(
                         _obscurePassword ? Icons.visibility : Icons.visibility_off,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
+                      onPressed: _isLoggingIn ? null : () {
+                        if (mounted) {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        }
                       },
                     ),
                   ),
                   obscureText: _obscurePassword,
+                  enabled: !_isLoggingIn, // Disable during login
                   validator: (value) {
                     if (value?.isEmpty ?? true) {
                       return 'Please enter your password';
@@ -152,17 +157,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 // Login Button
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
+                    final isLoading = auth.isLoading || _isLoggingIn;
                     return ElevatedButton(
-                      onPressed: auth.isLoading ? null : _handleLogin,
-                      child: auth.isLoading
+                      onPressed: isLoading ? null : _handleLogin,
+                      child: isLoading
                           ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(AppColors.background),
-                              ),
-                            )
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation(AppColors.background),
+                        ),
+                      )
                           : const Text('Sign In'),
                     );
                   },
@@ -171,13 +177,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 // Forgot Password
                 TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Forgot password feature coming soon!'),
-                        backgroundColor: AppColors.info,
-                      ),
-                    );
+                  onPressed: _isLoggingIn ? null : () {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Forgot password feature coming soon!'),
+                          backgroundColor: AppColors.info,
+                        ),
+                      );
+                    }
                   },
                   child: const Text('Forgot Password?'),
                 ),
@@ -192,11 +200,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       style: TextStyle(color: AppColors.textSecondary),
                     ),
                     TextButton(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => SignupScreen()),
-                        );
+                      onPressed: _isLoggingIn ? null : () {
+                        if (mounted) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => SignupScreen()),
+                          );
+                        }
                       },
                       child: const Text('Sign Up'),
                     ),
@@ -211,19 +221,67 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
+    if (!mounted) return; // Check if widget is still mounted
+
     if (!_formKey.currentState!.validate()) return;
 
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    // Set local loading state to prevent double navigation
+    setState(() {
+      _isLoggingIn = true;
+    });
 
-    final success = await auth.login(
-      _emailController.text.trim(),
-      _passwordController.text,
-    );
+    try {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
 
-    if (success) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => MainNavigationScreen()),
+      final success = await auth.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      // Always check if widget is still mounted before using context
+      if (!mounted) return;
+
+      // Clear local loading state
+      setState(() {
+        _isLoggingIn = false;
+      });
+
+      if (success) {
+        // Clear any errors
+        auth.clearError();
+
+        // Navigate to main screen and remove all previous routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => MainNavigationScreen()),
+              (Route<dynamic> route) => false,
+        );
+      }
+      // Error handling is done in the Consumer widget above
+    } catch (e) {
+      // Always check if widget is still mounted before using context
+      if (!mounted) return;
+
+      setState(() {
+        _isLoggingIn = false;
+      });
+
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Login Error'),
+            content: Text('An unexpected error occurred: $e'),
+            actions: <Widget>[
+              TextButton(
+                child: Text('OK'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
       );
     }
   }

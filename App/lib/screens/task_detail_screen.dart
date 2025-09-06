@@ -1,10 +1,12 @@
 // lib/screens/tasks/task_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/data_provider.dart';
-import '../../models/task.dart';
-import '../../config/theme.dart';
+
+import 'package:app/providers/auth_provider.dart';
+import 'package:app/providers/data_provider.dart';
+import 'package:app/models/task.dart';
+import 'package:app/config/theme.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -109,27 +111,26 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               Expanded(
                                 child: _isEditing
                                     ? TextFormField(
-                                        controller: _titleController,
-                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        decoration: const InputDecoration(
-                                          labelText: 'Title',
-                                          border: InputBorder.none,
-                                        ),
-                                      )
+                                  controller: _titleController,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Title',
+                                    border: InputBorder.none,
+                                  ),
+                                )
                                     : Text(
-                                        _task.title,
-                                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                  _task.title,
+                                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                               _buildPriorityChip(_task.priority),
                             ],
                           ),
                           const SizedBox(height: 12),
-
                           // Status
                           _buildStatusChip(_task.status, isEditing: _isEditing),
                         ],
@@ -152,26 +153,25 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 12),
-
                           _isEditing
                               ? TextFormField(
-                                  controller: _descriptionController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Enter task description...',
-                                    border: InputBorder.none,
-                                  ),
-                                  maxLines: 4,
-                                )
+                            controller: _descriptionController,
+                            decoration: const InputDecoration(
+                              hintText: 'Enter task description...',
+                              border: InputBorder.none,
+                            ),
+                            maxLines: 4,
+                          )
                               : Text(
-                                  _task.description.isEmpty 
-                                      ? 'No description provided' 
-                                      : _task.description,
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: _task.description.isEmpty 
-                                        ? AppColors.textTertiary 
-                                        : AppColors.textPrimary,
-                                  ),
-                                ),
+                            _task.description.isEmpty
+                                ? 'No description provided'
+                                : _task.description,
+                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: _task.description.isEmpty
+                                  ? AppColors.textTertiary
+                                  : AppColors.textPrimary,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -192,16 +192,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             subtitle: Text(project?.name ?? 'Unknown Project'),
                           ),
                           const Divider(),
-
                           // Assignee
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Icon(Icons.person, color: AppColors.primary),
                             title: const Text('Assigned to'),
-                            subtitle: Text(assignee?.name ?? 'Unknown User'),
+                            subtitle: Text(assignee?.fullName ?? 'Unknown User'), // FIXED: Changed from .name to .fullName
                           ),
                           const Divider(),
-
                           // Due Date
                           ListTile(
                             contentPadding: EdgeInsets.zero,
@@ -213,7 +211,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             subtitle: Row(
                               children: [
                                 Text(
-                                  '\${_task.dueDate.day}/\${_task.dueDate.month}/\${_task.dueDate.year}',
+                                  '${_task.dueDate.day}/${_task.dueDate.month}/${_task.dueDate.year}',
                                   style: TextStyle(
                                     color: isOverdue ? AppColors.error : AppColors.textSecondary,
                                   ),
@@ -241,13 +239,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                           const Divider(),
-
                           // Created Date
                           ListTile(
                             contentPadding: EdgeInsets.zero,
                             leading: Icon(Icons.access_time, color: AppColors.primary),
                             title: const Text('Created'),
-                            subtitle: Text('\${_task.createdAt.day}/\${_task.createdAt.month}/\${_task.createdAt.year}'),
+                            subtitle: Text('${_task.createdAt.day}/${_task.createdAt.month}/${_task.createdAt.year}'),
                           ),
                         ],
                       ),
@@ -270,7 +267,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               ),
                             ),
                             const SizedBox(height: 12),
-
                             Wrap(
                               spacing: 8,
                               runSpacing: 8,
@@ -296,7 +292,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       return DropdownButton<TaskStatus>(
         value: status,
         items: TaskStatus.values.map((s) {
-          return DropdownMenuItem<TaskStatus>(
+          return DropdownMenuItem(
             value: s,
             child: Text(_getStatusText(s)),
           );
@@ -313,7 +309,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     Color color;
     String text;
-
     switch (status) {
       case TaskStatus.todo:
         color = AppColors.textTertiary;
@@ -420,7 +415,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   void _saveTask() async {
     final auth = Provider.of<AuthProvider>(context, listen: false);
     final dataProvider = Provider.of<DataProvider>(context, listen: false);
-
     if (auth.token == null) return;
 
     final taskData = {
@@ -430,7 +424,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     };
 
     final success = await dataProvider.updateTask(auth.token!, _task.id, taskData);
-
     if (success) {
       setState(() {
         _task = Task(
@@ -448,7 +441,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         );
         _isEditing = false;
       });
-
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Task updated successfully'),
@@ -458,8 +450,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(dataProvider.error.isNotEmpty 
-              ? dataProvider.error 
+          content: Text(dataProvider.error.isNotEmpty
+              ? dataProvider.error
               : 'Failed to update task'),
           backgroundColor: AppColors.error,
         ),

@@ -1,11 +1,13 @@
 // lib/screens/projects/project_detail_screen.dart
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/data_provider.dart';
-import '../../models/project.dart';
-import '../../models/task.dart';
-import '../../config/theme.dart';
+
+import 'package:app/providers/auth_provider.dart';
+import 'package:app/providers/data_provider.dart';
+import 'package:app/models/project.dart';
+import 'package:app/models/task.dart';
+import 'package:app/config/theme.dart';
 import 'task_detail_screen.dart';
 import 'task_create_screen.dart';
 
@@ -18,7 +20,7 @@ class ProjectDetailScreen extends StatefulWidget {
   _ProjectDetailScreenState createState() => _ProjectDetailScreenState();
 }
 
-class _ProjectDetailScreenState extends State<ProjectDetailScreen> 
+class _ProjectDetailScreenState extends State<ProjectDetailScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
 
@@ -44,8 +46,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
           final completedTasks = tasks.where((t) => t.status == TaskStatus.completed).length;
           final totalTasks = tasks.length;
           final progress = totalTasks > 0 ? completedTasks / totalTasks : 0.0;
-
-          final isOverdue = widget.project.deadline.isBefore(DateTime.now()) && 
+          final isOverdue = widget.project.deadline.isBefore(DateTime.now()) &&
               widget.project.status != 'Completed';
           final daysLeft = widget.project.deadline.difference(DateTime.now()).inDays;
 
@@ -59,44 +60,44 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                 flexibleSpace: FlexibleSpaceBar(
                   background: widget.project.image != null
                       ? Container(
-                          decoration: BoxDecoration(
-                            image: DecorationImage(
-                              image: NetworkImage(widget.project.image!),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  AppColors.background.withOpacity(0.7),
-                                ],
-                              ),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppColors.primary.withOpacity(0.3),
-                                AppColors.primary.withOpacity(0.1),
-                              ],
-                            ),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              Icons.folder,
-                              size: 80,
-                              color: AppColors.primary,
-                            ),
-                          ),
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: NetworkImage(widget.project.image!),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            AppColors.background.withOpacity(0.7),
+                          ],
                         ),
+                      ),
+                    ),
+                  )
+                      : Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.primary.withOpacity(0.3),
+                          AppColors.primary.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        Icons.folder,
+                        size: 80,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                  ),
                 ),
               ),
 
@@ -148,7 +149,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                                     ),
                                   ),
                                   Text(
-                                    '\${(progress * 100).toInt()}%',
+                                    '${(progress * 100).toInt()}%',
                                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.bold,
@@ -163,7 +164,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                                 valueColor: AlwaysStoppedAnimation(AppColors.primary),
                               ),
                               const SizedBox(height: 12),
-
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                                 children: [
@@ -291,7 +291,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
         final task = tasks[index];
         final dataProvider = Provider.of<DataProvider>(context, listen: false);
         final assignee = dataProvider.getUserById(task.assigneeId);
-        final isOverdue = task.dueDate.isBefore(DateTime.now()) && 
+        final isOverdue = task.dueDate.isBefore(DateTime.now()) &&
             task.status != TaskStatus.completed;
 
         return Card(
@@ -336,14 +336,13 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                     ),
                   ],
                   const SizedBox(height: 12),
-
                   Row(
                     children: [
                       CircleAvatar(
                         radius: 12,
                         backgroundColor: AppColors.primary.withOpacity(0.1),
                         child: Text(
-                          assignee?.name.substring(0, 1).toUpperCase() ?? '?',
+                          assignee?.fullName.substring(0, 1).toUpperCase() ?? '?', // FIXED: Changed from .name to .fullName
                           style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.bold,
@@ -353,7 +352,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        assignee?.name ?? 'Unassigned',
+                        assignee?.fullName ?? 'Unassigned', // FIXED: Changed from .name to .fullName
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: AppColors.textTertiary,
                         ),
@@ -366,7 +365,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        '\${task.dueDate.day}/\${task.dueDate.month}',
+                        '${task.dueDate.day}/${task.dueDate.month}',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: isOverdue ? AppColors.error : AppColors.textTertiary,
                         ),
@@ -395,7 +394,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             ),
           ),
           const SizedBox(height: 16),
-
           // TODO: Implement team members list
           Card(
             child: Padding(
@@ -438,7 +436,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
             ),
           ),
           const SizedBox(height: 16),
-
           // TODO: Implement activity feed
           Card(
             child: Padding(
@@ -505,7 +502,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
   Widget _buildStatusChip(TaskStatus status) {
     Color color;
     String text;
-
     switch (status) {
       case TaskStatus.todo:
         color = AppColors.textTertiary;
@@ -596,7 +592,6 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen>
 
 class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar tabBar;
-
   _SliverTabBarDelegate(this.tabBar);
 
   @override

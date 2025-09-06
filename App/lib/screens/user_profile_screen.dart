@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../../providers/auth_provider.dart';
-import '../../config/theme.dart';
+import 'package:app/providers/auth_provider.dart';
+import 'package:app/config/theme.dart';
 import 'login_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
@@ -13,7 +13,8 @@ class UserProfileScreen extends StatefulWidget {
 }
 
 class _UserProfileScreenState extends State<UserProfileScreen> {
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   final _teamController = TextEditingController();
   final _organizationController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
@@ -32,15 +33,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final user = auth.currentUser;
 
     if (user != null) {
-      _nameController.text = user.name;
-      _teamController.text = user.team ?? '';
-      _organizationController.text = user.organization ?? '';
+      _firstNameController.text = user.firstName;
+      _lastNameController.text = user.lastName;
+      // These fields don't exist in the new User model, so we'll leave them empty for now
+      // In a real app, you'd need to add these fields to your User model and API
+      _teamController.text = '';
+      _organizationController.text = '';
     }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     _teamController.dispose();
     _organizationController.dispose();
     super.dispose();
@@ -126,20 +131,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                     backgroundColor: AppColors.primary.withOpacity(0.1),
                                     backgroundImage: _selectedImage != null
                                         ? FileImage(_selectedImage!)
-                                        : (user.profileImage != null
-                                            ? NetworkImage(user.profileImage!)
-                                            : null) as ImageProvider?,
-                                    child: (_selectedImage == null && user.profileImage == null)
+                                        : null, // No profileImage field in new User model
+                                    child: _selectedImage == null
                                         ? Text(
-                                            user.name.isNotEmpty 
-                                                ? user.name.substring(0, 1).toUpperCase()
-                                                : '?',
-                                            style: TextStyle(
-                                              fontSize: 36,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.primary,
-                                            ),
-                                          )
+                                      user.fullName.isNotEmpty
+                                          ? user.fullName.substring(0, 1).toUpperCase()
+                                          : '?',
+                                      style: TextStyle(
+                                        fontSize: 36,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
+                                    )
                                         : null,
                                   ),
                                   if (_isEditing)
@@ -168,31 +171,51 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // Name
-                            if (_isEditing)
-                              TextFormField(
-                                controller: _nameController,
-                                decoration: const InputDecoration(
-                                  labelText: 'Full Name',
-                                  prefixIcon: Icon(Icons.person),
-                                ),
-                                validator: (value) {
-                                  if (value?.isEmpty ?? true) {
-                                    return 'Name cannot be empty';
-                                  }
-                                  return null;
-                                },
-                              )
-                            else
+                            // Name fields
+                            if (_isEditing) ...[
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _firstNameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'First Name',
+                                        prefixIcon: Icon(Icons.person),
+                                      ),
+                                      validator: (value) {
+                                        if (value?.isEmpty ?? true) {
+                                          return 'First name cannot be empty';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: TextFormField(
+                                      controller: _lastNameController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Last Name',
+                                        prefixIcon: Icon(Icons.person_outline),
+                                      ),
+                                      validator: (value) {
+                                        if (value?.isEmpty ?? true) {
+                                          return 'Last name cannot be empty';
+                                        }
+                                        return null;
+                                      },
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ] else ...[
                               Text(
-                                user.name,
+                                user.fullName,
                                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                                   fontWeight: FontWeight.bold,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
-
-                            if (!_isEditing) ...[
                               const SizedBox(height: 8),
                               Text(
                                 user.email,
@@ -210,7 +233,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   border: Border.all(color: AppColors.primary.withOpacity(0.3)),
                                 ),
                                 child: Text(
-                                  user.role,
+                                  user.role.toUpperCase(),
                                   style: TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
@@ -259,10 +282,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 ),
                                 title: const Text('Team'),
                                 subtitle: Text(
-                                  user.team?.isNotEmpty == true ? user.team! : 'Not specified',
+                                  _teamController.text.isNotEmpty ? _teamController.text : 'Not specified',
                                   style: TextStyle(
-                                    color: user.team?.isNotEmpty == true 
-                                        ? AppColors.textPrimary 
+                                    color: _teamController.text.isNotEmpty
+                                        ? AppColors.textPrimary
                                         : AppColors.textTertiary,
                                   ),
                                 ),
@@ -289,14 +312,73 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                 ),
                                 title: const Text('Organization'),
                                 subtitle: Text(
-                                  user.organization?.isNotEmpty == true ? user.organization! : 'Not specified',
+                                  _organizationController.text.isNotEmpty ? _organizationController.text : 'Not specified',
                                   style: TextStyle(
-                                    color: user.organization?.isNotEmpty == true 
-                                        ? AppColors.textPrimary 
+                                    color: _organizationController.text.isNotEmpty
+                                        ? AppColors.textPrimary
                                         : AppColors.textTertiary,
                                   ),
                                 ),
                               ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Account Info Card
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Account Information',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                Icons.email,
+                                color: AppColors.primary,
+                              ),
+                              title: const Text('Email'),
+                              subtitle: Text(user.email),
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                Icons.badge,
+                                color: AppColors.primary,
+                              ),
+                              title: const Text('User ID'),
+                              subtitle: Text(user.id),
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                Icons.calendar_today,
+                                color: AppColors.primary,
+                              ),
+                              title: const Text('Member Since'),
+                              subtitle: Text(_formatDate(user.createdAt)),
+                            ),
+                            const Divider(height: 1),
+                            ListTile(
+                              contentPadding: EdgeInsets.zero,
+                              leading: Icon(
+                                Icons.update,
+                                color: AppColors.primary,
+                              ),
+                              title: const Text('Last Updated'),
+                              subtitle: Text(_formatDate(user.updatedAt)),
+                            ),
                           ],
                         ),
                       ),
@@ -376,13 +458,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                         child: auth.isLoading
                             ? const SizedBox(
-                                height: 20,
-                                width: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation(AppColors.textPrimary),
-                                ),
-                              )
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation(AppColors.textPrimary),
+                          ),
+                        )
                             : const Text('Logout'),
                       ),
                     ),
@@ -395,6 +477,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         },
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 
   Future<void> _selectProfileImage() async {
@@ -421,7 +507,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   _pickImage(ImageSource.gallery);
                 },
               ),
-              if (_selectedImage != null || Provider.of<AuthProvider>(context, listen: false).currentUser?.profileImage != null)
+              if (_selectedImage != null)
                 ListTile(
                   leading: const Icon(Icons.delete, color: AppColors.error),
                   title: const Text('Remove Photo'),
@@ -456,7 +542,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error selecting image: \$e'),
+          content: Text('Error selecting image: $e'),
           backgroundColor: AppColors.error,
         ),
       );
@@ -468,9 +554,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
     final auth = Provider.of<AuthProvider>(context, listen: false);
 
-    // Prepare update data
+    // Prepare update data - adjust field names to match your API
     Map<String, dynamic> updateData = {
-      'name': _nameController.text.trim(),
+      'firstName': _firstNameController.text.trim(),
+      'lastName': _lastNameController.text.trim(),
+      // Note: These fields don't exist in the current User model
+      // You'll need to add them to your backend and User model if needed
       'team': _teamController.text.trim(),
       'organization': _organizationController.text.trim(),
     };
@@ -524,7 +613,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(builder: (context) => LoginScreen()),
-                (route) => false,
+                    (route) => false,
               );
             },
             style: ElevatedButton.styleFrom(
