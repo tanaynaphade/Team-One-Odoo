@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema(
             required: [true, "Password is required"],
             trim: true
         },
+        role: {
+            type: String,
+            enum: ['manager', 'employee'],
+            default: 'employee'
+        },
         refreshToken: {
             type: String
         }
