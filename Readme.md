@@ -52,13 +52,11 @@ The application features a sleek dark theme interface with the following key scr
 
 ## Technology Stack
 
-- **Frontend**: React Native / Flutter (Mobile Framework)
-- **Backend**: Node.js with Express.js / Spring Boot
-- **Database**: MongoDB / PostgreSQL
+- **Frontend**: Flutter (Mobile Framework)
+- **Backend**: Node.js with Express.js 
+- **Database**: MongoDB 
 - **Authentication**: JWT (JSON Web Tokens)
-- **State Management**: Redux / Provider Pattern
-- **API**: RESTful services
-- **Deployment**: Docker containerization ready
+- **State Management**: Provider Pattern
 
 ## Installation
 
